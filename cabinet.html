@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Личный кабинет — Мельникова Полина Target Agency</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0B0B0D;
+      --card: #151518;
+      --line: #26262B;
+      --cream: #E5C9A3;
+      --cream-dark: #c9ab82;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --text: #F5F5F7;
+      --muted: #9CA3AF;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container { max-width: 1040px; margin: 0 auto; padding: 24px 16px 60px; }
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 20px; border-bottom: 1px solid var(--line); gap: 12px; flex-wrap: wrap;
+    }
+    .brand { font-weight: 700; font-size: 17px; color: var(--cream); }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 18px; padding: 24px; margin-top: 20px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
+    .stat-label { color: var(--muted); font-size: 13px; }
+    .stat-value { font-size: 26px; font-weight: 700; margin-top: 6px; }
+    .btn {
+      background: var(--cream); color: #0B0B0D; border: none;
+      padding: 12px 20px; border-radius: 999px; font-weight: 700;
+      cursor: pointer; font-size: 14px; transition: 0.2s;
+    }
+    .btn:hover { background: var(--cream-dark); }
+    .btn-sm { padding: 8px 14px; font-size: 13px; }
+    .btn-green { background: var(--green); color: #052e16; }
+    .btn-outline {
+      background: transparent; border: 1px solid var(--line);
+      color: var(--text); padding: 8px 16px; border-radius: 999px;
+      cursor: pointer; font-size: 13px; text-decoration: none;
+    }
+    .btn-outline:hover { border-color: var(--cream); color: var(--cream); }
+    input, select {
+      width: 100%; padding: 11px 14px; margin: 6px 0 14px;
+      border-radius: 10px; border: 1px solid var(--line);
+      background: #0B0B0D; color: var(--text); font-size: 14px;
+    }
+    label { font-size: 13px; color: var(--muted); display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+    th { color: var(--muted); font-weight: 500; font-size: 13px; }
+    .badge {
+      background: rgba(34,197,94,0.15); color: var(--green);
+      padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; display: inline-block;
+    }
+    .badge-warn { background: rgba(234,179,8,0.15); color: var(--yellow); }
+    .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+    .hidden { display: none !important; }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+    }
+    .modal { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; max-width: 440px; width: 100%; }
+    .admin-row { border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; background: #101013; }
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="brand">Мельникова Полина • Личный кабинет</div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="index.html" class="btn-outline">← На главный сайт</a>
+      <button id="logoutBtn" class="btn-outline hidden" onclick="logout()">Выйти</button>
+    </div>
+  </div>
+
+  <!-- 1. ЭКРАН ВХОДА -->
+  <div id="authBox" class="card" style="max-width: 420px; margin: 60px auto;">
+    <h2 style="margin-top:0; color: var(--cream);">Вход в кабинет</h2>
+    <p style="color: var(--muted); font-size: 14px;">Введите email и пароль, выданные при старте проекта.</p>
+    <label>Email</label>
+    <input type="email" id="emailInput" placeholder="name@mail.ru">
+    <label>Пароль</label>
+    <input type="password" id="passInput" placeholder="••••••••">
+    <button class="btn" style="width:100%; margin-top:4px;" onclick="login()">Войти</button>
+    <p id="authError" style="color: var(--red); font-size: 13px; margin-bottom: 0;"></p>
+  </div>
+
+  <!-- 2. КАБИНЕТ КЛИЕНТА -->
+  <div id="cabinetBox" class="hidden">
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
+      <div>
+        <span class="badge" id="workStatus">В работе</span>
+        <h2 id="clientName" style="margin: 10px 0 4px;">Загрузка...</h2>
+        <div style="color: var(--muted); font-size: 14px;">
+          Сообщество ВК: <a id="vkLink" href="#" target="_blank" style="color: var(--cream);">не указано</a>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="stat-label">Текущий баланс</div>
+        <div class="stat-value" id="balanceVal" style="color: var(--cream);">0 ₽</div>
+        <button class="btn" style="margin-top:12px;" onclick="openPayModal()">Пополнить / Оплатить этап</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card" style="margin-top:0">
+        <div class="stat-label">Подключённый тариф</div>
+        <div class="stat-value" id="tariffName" style="font-size:20px;">—</div>
+        <div id="tariffPeriod" style="color: var(--muted); font-size: 13px; margin-top:6px;">—</div>
+      </div>
+      <div class="card" style="margin-top:0">
+        <div class="stat-label">Следующий платёж (50% за 2 недели)</div>
+        <div class="stat-value" id="nextAmount">0 ₽</div>
+        <div style="color: var(--muted); font-size: 13px; margin-top:6px;">
+          Дата оплаты: <strong id="nextDate" style="color: var(--text);">—</strong>
+          <span id="overdueBadge" class="badge badge-red hidden" style="margin-left:6px;">Требуется оплата</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">История операций и платежей</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>Дата</th><th>Назначение платежа</th><th>Сумма</th><th>Статус</th></tr>
+          </thead>
+          <tbody id="paymentsTable">
+            <tr><td colspan="4" style="color:var(--muted)">Загрузка истории...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. АДМИН-ПАНЕЛЬ ДЛЯ ПОЛИНЫ -->
+  <div id="adminBox" class="hidden">
+    <div class="card" style="border-color: var(--cream);">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <span class="badge">Режим администратора</span>
+          <h2 style="margin: 8px 0 4px;">Управление клиентами и оплатами</h2>
+          <p style="color: var(--muted); font-size: 13px; margin: 0;">Изменяйте тарифы, суммы и зачисляйте оплаты в 1 клик.</p>
+        </div>
+        <button class="btn-outline" onclick="loadAdminPanel()">Обновить список</button>
+      </div>
+
+      <div style="background:#101013; border:1px dashed var(--line); border-radius:12px; padding:14px; margin-top:16px; font-size:13px; color:var(--muted);">
+        <strong style="color:var(--cream);">Как добавить нового клиента:</strong>
+        1) В Supabase → <em>Authentication → Users → Add user</em> создайте клиенту логин/пароль и скопируйте его <em>UID</em>.
+        2) В <em>Table Editor → clients → Insert row</em> вставьте этот <em>UID</em> в поле <code>id</code> и укажите имя — клиент сразу появится в списке ниже.
+      </div>
+    </div>
+
+    <div id="adminClientsList" style="margin-top:20px;">Загрузка клиентов...</div>
+  </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ОПЛАТЫ -->
+<div id="payModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h3 style="margin-top:0; color: var(--cream);">Пополнение и оплата этапа</h3>
+    <p style="font-size: 14px; color: var(--muted);">
+      Сумма к оплате за этап (2 недели): <strong id="modalSum" style="color: var(--text);">0 ₽</strong>
+    </p>
+    <label>Выберите способ оплаты</label>
+    <select id="payMethod">
+      <option value="СБП по номеру телефона">СБП (Система быстрых платежей)</option>
+      <option value="Перевод на карту">Банковская карта</option>
+    </select>
+    <div style="background:#0B0B0D; border:1px solid var(--line); border-radius:12px; padding:14px; font-size:13px; margin-bottom:16px;">
+      <div style="color:var(--muted); margin-bottom:6px;">Реквизиты для перевода (СБП):</div>
+      <div style="font-size:16px; font-weight:700; color:var(--cream);">+7 (908) 838-89-17</div>
+      <div style="color:var(--muted); margin-top:4px;">Получатель: Полина М. После перевода нажмите кнопку ниже — баланс и дата следующего платежа обновятся после проверки.</div>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn-outline" onclick="closePayModal()">Отмена</button>
+      <button class="btn" onclick="notifyPayment()">Я оплатил(а)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://hqlzodlkzyqvswsyuaif.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_jsKjpAK-lhE2nZKU7D-S2A_gUHXVonH';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentClient = null;
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) checkRoleAndLoad(session.user.id);
+  }
+
+  async function login() {
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passInput').value;
+    document.getElementById('authError').innerText = '';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      document.getElementById('authError').innerText = 'Ошибка входа: проверьте email и пароль';
+      return;
+    }
+    checkRoleAndLoad(data.user.id);
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    location.reload();
+  }
+
+  async function checkRoleAndLoad(userId) {
+    document.getElementById('authBox').classList.add('hidden');
+    document.getElementById('logoutBtn').classList.remove('hidden');
+
+    const { data: profile, error } = await sb.from('clients').select('*').eq('id', userId).single();
+    if (error || !profile) {
+      document.getElementById('cabinetBox').classList.remove('hidden');
+      document.getElementById('clientName').innerText = 'Профиль ещё не настроен администратором';
+      return;
+    }
+
+    if (profile.is_admin) {
+      document.getElementById('adminBox').classList.remove('hidden');
+      loadAdminPanel();
+    } else {
+      currentClient = profile;
+      renderClientCabinet(profile);
+    }
+  }
+
+  async function renderClientCabinet(client) {
+    document.getElementById('cabinetBox').classList.remove('hidden');
+    document.getElementById('clientName').innerText = client.full_name;
+    document.getElementById('workStatus').innerText = client.work_status;
+    document.getElementById('tariffName').innerText = client.tariff_name;
+    document.getElementById('tariffPeriod').innerText = client.tariff_period;
+    document.getElementById('balanceVal').innerText = Number(client.balance).toLocaleString('ru-RU') + ' ₽';
+    document.getElementById('nextAmount').innerText = Number(client.next_payment_amount).toLocaleString('ru-RU') + ' ₽';
+
+    const payDate = new Date(client.next_payment_date);
+    document.getElementById('nextDate').innerText = payDate.toLocaleDateString('ru-RU');
+    if (payDate < new Date(new Date().toDateString())) {
+      document.getElementById('overdueBadge').classList.remove('hidden');
+    }
+
+    if (client.vk_group_url) {
+      document.getElementById('vkLink').href = client.vk_group_url;
+      document.getElementById('vkLink').innerText = client.vk_group_url;
+    }
+
+    const { data: payments } = await sb.from('payments').select('*').eq('client_id', client.id).order('created_at', { ascending: false });
+    const tbody = document.getElementById('paymentsTable');
+    if (!payments || payments.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Платежей пока нет</td></tr>';
+      return;
+    }
+    tbody.innerHTML = payments.map(p => `
+      <tr>
+        <td>${new Date(p.created_at).toLocaleDateString('ru-RU')}</td>
+        <td>${p.description}</td>
+        <td><strong>${Number(p.amount).toLocaleString('ru-RU')} ₽</strong></td>
+        <td><span class="badge">${p.status === 'pending' ? 'На проверке' : 'Оплачено'}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  function openPayModal() {
+    if (!currentClient) return;
+    document.getElementById('modalSum').innerText = Number(currentClient.next_payment_amount).toLocaleString('ru-RU') + ' ₽';
+    document.getElementById('payModal').classList.remove('hidden');
+  }
+  function closePayModal() { document.getElementById('payModal').classList.add('hidden'); }
+
+  function notifyPayment() {
+    const method = document.getElementById('payMethod').value;
+    const text = encodeURIComponent(`Здравствуйте! Оплатил(а) этап ${currentClient.next_payment_amount} ₽ (${method}), клиент: ${currentClient.full_name}`);
+    closePayModal();
+    window.open(`https://t.me/lisswwem?text=${text}`, '_blank');
+  }
+
+  // --- ФУНКЦИИ АДМИН-ПАНЕЛИ ---
+  async function loadAdminPanel() {
+    const list = document.getElementById('adminClientsList');
+    const { data: clients, error } = await sb.from('clients').select('*').eq('is_admin', false).order('created_at', { ascending: false });
+    if (error) {
+      list.innerHTML = `<div class="card" style="color:var(--red)">Ошибка загрузки: ${error.message}</div>`;
+      return;
+    }
+    if (!clients || clients.length === 0) {
+      list.innerHTML = '<div class="card" style="color:var(--muted)">Пока нет добавленных клиентов. Добавьте первого клиента через Supabase → Table Editor → clients.</div>';
+      return;
+    }
+    list.innerHTML = clients.map(c => `
+      <div class="admin-row">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+          <strong style="font-size:17px; color:var(--cream);">${c.full_name}</strong>
+          <span class="badge">${c.work_status}</span>
+        </div>
+        <div class="admin-grid">
+          <div>
+            <label>Тариф / услуга</label>
+            <select id="tariff_${c.id}">
+              <option ${c.tariff_name === 'Подготовка сообщества к таргету' ? 'selected' : ''}>Подготовка сообщества к таргету</option>
+              <option ${c.tariff_name === 'Таргет ВК' ? 'selected' : ''}>Таргет ВК</option>
+              <option ${c.tariff_name === 'СММ ВК' ? 'selected' : ''}>СММ ВК</option>
+              <option ${c.tariff_name === 'Таргет + СММ ВК' ? 'selected' : ''}>Таргет + СММ ВК</option>
+            </select>
+          </div>
+          <div>
+            <label>Этап / период</label>
+            <input type="text" id="period_${c.id}" value="${c.tariff_period}">
+          </div>
+          <div>
+            <label>Баланс (₽)</label>
+            <input type="number" id="bal_${c.id}" value="${c.balance}">
+          </div>
+          <div>
+            <label>След. платёж (₽)</label>
+            <input type="number" id="nextAmt_${c.id}" value="${c.next_payment_amount}">
+          </div>
+          <div>
+            <label>Дата след. платежа</label>
+            <input type="date" id="nextDate_${c.id}" value="${c.next_payment_date}">
+          </div>
+          <div>
+            <label>Статус работ</label>
+            <select id="status_${c.id}">
+              <option ${c.work_status === 'В работе' ? 'selected' : ''}>В работе</option>
+              <option ${c.work_status === 'Подготовка группы' ? 'selected' : ''}>Подготовка группы</option>
+              <option ${c.work_status === 'На паузе' ? 'selected' : ''}>На паузе</option>
+              <option ${c.work_status === 'Завершён' ? 'selected' : ''}>Завершён</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label>Ссылка на группу ВК</label>
+          <input type="text" id="vk_${c.id}" value="${c.vk_group_url || ''}" placeholder="https://vk.com/...">
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+          <button class="btn btn-sm" onclick="saveClient('${c.id}')">Сохранить изменения</button>
+          <button class="btn btn-sm btn-green" onclick="acceptPayment('${c.id}', '${c.full_name}')">+ Зачислить оплату (+14 дней)</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function saveClient(id) {
+    const payload = {
+      tariff_name: document.getElementById('tariff_' + id).value,
+      tariff_period: document.getElementById('period_' + id).value,
+      balance: Number(document.getElementById('bal_' + id).value),
+      next_payment_amount: Number(document.getElementById('nextAmt_' + id).value),
+      next_payment_date: document.getElementById('nextDate_' + id).value,
+      work_status: document.getElementById('status_' + id).value,
+      vk_group_url: document.getElementById('vk_' + id).value.trim()
+    };
+    const { error } = await sb.from('clients').update(payload).eq('id', id);
+    if (error) alert('Ошибка: ' + error.message);
+    else alert('Данные клиента обновлены!');
+  }
+
+  async function acceptPayment(id, name) {
+    const amt = Number(document.getElementById('nextAmt_' + id).value);
+    const tariff = document.getElementById('tariff_' + id).value;
+    const curDateStr = document.getElementById('nextDate_' + id).value;
+    const curDate = new Date(curDateStr);
+    curDate.setDate(curDate.getDate() + 14);
+    const newDateStr = curDate.toISOString().split('T')[0];
+
+    await sb.from('payments').insert({
+      client_id: id,
+      amount: amt,
+      description: `Оплата этапа (2 недели) — ${tariff}`,
+      status: 'paid'
+    });
+
+    await sb.from('clients').update({ next_payment_date: newDateStr }).eq('id', id);
+    alert(`Оплата ${amt} ₽ для ${name} зачислена! Следующая дата сдвинута на ${newDateStr}.`);
+    loadAdminPanel();
+  }
+
+  init();
+</script>
+</body>
+</html>
