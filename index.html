@@ -39,6 +39,9 @@
     .section { padding-block: 4rem; }
     .hero-bg { background-image: url("https://i.ibb.co/tMNWJ9Kr/image.jpg"); }
     .hero-shell { min-height: calc(100vh - 72px); min-height: calc(100svh - 72px); }
+    .hero-copy { margin-top: 150px; margin-top: clamp(120px, calc(44vh - 70px), 460px); margin-bottom: auto; }
+    @supports (height: 100svh) { .hero-copy { margin-top: clamp(120px, calc(44svh - 70px), 460px); } }
+    @media (min-width: 1024px) { .hero-copy { margin-top: auto; margin-bottom: auto; } }
     @keyframes starTwinkle {
       0%, 100% { opacity: var(--o-min, .12); transform: scale(.8); }
       50% { opacity: var(--o-max, .7); transform: scale(1.15); }
@@ -362,7 +365,7 @@
         <div class="mt-4 flex w-full justify-center">
           <span class="inline-flex w-fit items-center rounded-full border border-cream/25 bg-cream/[0.08] px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.22em] text-cream backdrop-blur-sm sm:text-[11px]">• ТАРГЕТ • SMM • ВКОНТАКТЕ</span>
         </div>
-        <div class="mx-auto my-auto w-full max-w-3xl text-center xl:max-w-2xl 2xl:max-w-3xl">
+        <div class="hero-copy mx-auto w-full max-w-3xl text-center xl:max-w-2xl 2xl:max-w-3xl">
           <h1 class="text-2xl font-bold leading-snug text-white sm:text-3xl md:text-4xl">
             Приводим <span class="text-cream">целевые заявки</span> из ВК для вашего бизнеса
           </h1>
@@ -1172,7 +1175,7 @@
     (function () {
       'use strict';
 
-      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxBDLXa9P-ZWKJBm8lY4Vxksy4N3ixjTriu-FXen7awiA7MbWf2AQdsRxTrTrh7NbFag/exec';
+      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjTlI04N2f2dDo7Z-rf86abz-F7c1X1Lx7NRwCWiGoJv_jZGEkoZ1lE2vEMiG2LS2WaA/exec';
       var MAX_URL = 'https://max.ru/u/f9LHodD0cOJ8VCGknUDofqnbzaxWDrWOVlYSxBCTY_tgYdLexY2VcZATKbw';
       var TG_URL = 'https://t.me/lisswwem';
 
